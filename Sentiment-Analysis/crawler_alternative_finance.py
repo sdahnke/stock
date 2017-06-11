@@ -6,10 +6,11 @@ import re
 import sys
 import time
 import urllib2
+import csv
+import operator
 
 
 # output file name: input/stockPrices_raw.json
-# json structure: crawl daily price data from yahoo finance
 #          ticker
 #         /  |   \       
 #     open close adjust ...
@@ -18,7 +19,6 @@ import urllib2
 
 def calc_finished_ticker():
     os.system("awk -F',' '{print $1}' ./input/news_reuters.csv | sort | uniq > ./input/finished.reuters")
-
 
 def get_stock_Prices():
     fin = open('./input/finished.reuters')
@@ -29,6 +29,7 @@ def get_stock_Prices():
         sys.exit("Prices data already existed!")
 
     priceSet = {}
+    # reference stock - IMPORTANT
     # priceSet['^GSPC'] = repeatDownload('^GSPC') # download S&P 500
     for num, line in enumerate(fin):
         ticker = line.strip()
