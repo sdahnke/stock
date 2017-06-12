@@ -7,6 +7,7 @@ import sys
 import time
 import urllib2
 import quandl
+import pandas
 
 
 # output file name: input/stockPrices_raw.json
@@ -15,6 +16,8 @@ import quandl
 #     open close adjust ...
 #       /    |     \
 #    dates dates  dates ...
+
+quandl.ApiConfig.api_key = 'umGymx6FEb-Bm2xRFRGV'
 
 def calc_finished_ticker():
     os.system("awk -F',' '{print $1}' ./input/news_reuters.csv | sort | uniq > ./input/finished.reuters")
@@ -38,21 +41,33 @@ def get_stock_Prices():
     with open(output, 'w') as outfile:
         json.dump(priceSet, outfile, indent=4)
 
+def ALL_PRICES(ticker):
+    ref_data = quandl.get('TSE/1547', returns="numpy") # S&P 500
+    cor_data = quandl.get_table('WIKI/PRICES') # 3000 US companies
+
+    df_ref = pandas.DataFrame(data=ref_data)
+    df_ref['Ticker'] = '^GSPC'
+
+    df_ref.columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'ticker']
+    df_ref = df_ref[['ticker', 'date', 'open', 'high', 'low', 'close', 'volume']]
+
+    df_cor = pandas.DataFrame(data=cor_data)
+    df_cor = df_cor.reindex(columns=['ticker', 'date', 'open', 'high', 'low', 'close', 'volume'])
+
+    df_all = df_cor.append(df_ref)
+
 
 def repeatDownload(ticker):
     repeat_times = 100  # repeat download for N times
     for _ in range(repeat_times):
         try:
-            time.sleep(random.uniform(10, 60))
+            time.sleep(random.uniform(10
+                                      , 60))
             priceStr = PRICE(ticker)
-            print len(priceStr)
             if len(priceStr) > 0:  # skip loop if data is not empty
                 break
         except:
             if _ == 0: print ticker, "Http error!"
-            if _ == repeat_times - 1:
-                next(range(repeat_times), None)
-                continue
     return priceStr
 
 
@@ -83,6 +98,7 @@ def PRICE(ticker):
                 ticker_price[typeName][date] = round(float(line[num + 1]), 2)
             except:
                 ticker_price[typeName] = {}
+        print ticker_price
     return ticker_price
 
 
