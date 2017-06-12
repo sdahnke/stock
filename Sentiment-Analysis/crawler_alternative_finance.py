@@ -1,14 +1,11 @@
 #!/usr/bin/python
 import json
 import os
-import random
 import re
 import sys
-import time
-import urllib2
-import quandl
-import pandas
 
+import pandas
+import quandl
 
 # output file name: input/stockPrices_raw.json
 #          ticker
@@ -18,6 +15,34 @@ import pandas
 #    dates dates  dates ...
 
 quandl.ApiConfig.api_key = 'umGymx6FEb-Bm2xRFRGV'
+
+
+def get_all():
+    fin = open('./input/finished.reuters')
+
+    ref_data = quandl.get('TSE/1547', returns="numpy")  # S&P 500
+    cor_data = quandl.get_table('WIKI/PRICES')  # 3000 US companies
+
+    df_ref = pandas.DataFrame(data=ref_data)
+    df_ref['Ticker'] = '^GSPC'
+
+    df_ref.columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'ticker']
+    df_ref = df_ref[['ticker', 'date', 'open', 'high', 'low', 'close', 'volume']]
+
+    df_cor = pandas.DataFrame(data=cor_data)
+    df_cor = df_cor.reindex(columns=['ticker', 'date', 'open', 'high', 'low', 'close', 'volume'])
+
+    df = df_cor.append(df_ref)
+
+    df.to_csv('all_stocks.csv', sep=',', encoding='utf-8')
+
+    df.to_csv('^GSPC.csv', sep=',', encoding='utf-8').loc[df['ticker'] == '^GSPC']
+
+    for num, line in enumerate(fin):
+        ticker = line.strip()
+        df.to_csv(ticker + '.csv', sep=',', encoding='utf-8').loc[df['ticker'] == ticker]
+
+
 
 def calc_finished_ticker():
     os.system("awk -F',' '{print $1}' ./input/news_reuters.csv | sort | uniq > ./input/finished.reuters")
@@ -32,60 +57,20 @@ def get_stock_Prices():
 
     priceSet = {}
     # reference stock - IMPORTANT
-    # priceSet['^GSPC'] = repeatDownload('^GSPC') # download S&P 500
+    priceSet['^GSPC'] = PRICE('^GSPC')  # download S&P 500
     for num, line in enumerate(fin):
         ticker = line.strip()
-        priceSet[ticker] = repeatDownload(ticker)
+        priceSet[ticker] = PRICE(ticker)
         # if num > 10: break # for testing purpose
 
     with open(output, 'w') as outfile:
         json.dump(priceSet, outfile, indent=4)
 
-def ALL_PRICES(ticker):
-    ref_data = quandl.get('TSE/1547', returns="numpy") # S&P 500
-    cor_data = quandl.get_table('WIKI/PRICES') # 3000 US companies
-
-    df_ref = pandas.DataFrame(data=ref_data)
-    df_ref['Ticker'] = '^GSPC'
-
-    df_ref.columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'ticker']
-    df_ref = df_ref[['ticker', 'date', 'open', 'high', 'low', 'close', 'volume']]
-
-    df_cor = pandas.DataFrame(data=cor_data)
-    df_cor = df_cor.reindex(columns=['ticker', 'date', 'open', 'high', 'low', 'close', 'volume'])
-
-    df_all = df_cor.append(df_ref)
-
-
-def repeatDownload(ticker):
-    repeat_times = 100  # repeat download for N times
-    for _ in range(repeat_times):
-        try:
-            time.sleep(random.uniform(10
-                                      , 60))
-            priceStr = PRICE(ticker)
-            if len(priceStr) > 0:  # skip loop if data is not empty
-                break
-        except:
-            if _ == 0: print ticker, "Http error!"
-    return priceStr
-
-
 def PRICE(ticker):
+    csv = open(ticker + '.csv').read().split('\n')
 
-    # Construct url
-    api_key = "umGymx6FEb-Bm2xRFRGV"
-
-    url1 = "https://www.quandl.com/api/v3/datasets/WIKI/" + ticker
-    url2 = ".csv?api_key=" + api_key
-
-    # parse url
-    print url1 + url2
-    response = urllib2.urlopen(url1 + url2)
-    csv = response.read().split('\n')
-    # get historical price
     ticker_price = {}
-    index = ['open', 'high', 'low', 'close', 'volume', 'adjClose']
+    index = ['open', 'high', 'low', 'close', 'volume']
     for num, line in enumerate(csv):
         line = line.strip().split(',')
         if len(line) < 7 or num == 0: continue
@@ -98,7 +83,6 @@ def PRICE(ticker):
                 ticker_price[typeName][date] = round(float(line[num + 1]), 2)
             except:
                 ticker_price[typeName] = {}
-        print ticker_price
     return ticker_price
 
 

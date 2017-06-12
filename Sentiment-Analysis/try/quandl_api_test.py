@@ -1,5 +1,5 @@
-import quandl
 import pandas
+import quandl
 
 quandl.ApiConfig.api_key = 'umGymx6FEb-Bm2xRFRGV'
 
