@@ -4,8 +4,7 @@ import os
 
 import nltk
 import numpy as np
-import utils
-import util
+import django.forms.utils
 
 
 # Use pretrained word vector to generate our target features
