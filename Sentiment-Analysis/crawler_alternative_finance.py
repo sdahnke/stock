@@ -87,5 +87,6 @@ def PRICE(ticker):
 
 
 if __name__ == "__main__":
+    get_all()
     calc_finished_ticker()
     get_stock_Prices()
