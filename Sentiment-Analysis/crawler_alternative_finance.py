@@ -6,6 +6,7 @@ import re
 import sys
 import time
 import urllib2
+import quandl
 
 
 # output file name: input/stockPrices_raw.json
