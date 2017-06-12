@@ -6,8 +6,6 @@ import re
 import sys
 import time
 import urllib2
-import csv
-import operator
 
 
 # output file name: input/stockPrices_raw.json
@@ -33,7 +31,6 @@ def get_stock_Prices():
     # priceSet['^GSPC'] = repeatDownload('^GSPC') # download S&P 500
     for num, line in enumerate(fin):
         ticker = line.strip()
-        print(num, ticker)
         priceSet[ticker] = repeatDownload(ticker)
         # if num > 10: break # for testing purpose
 
@@ -42,21 +39,23 @@ def get_stock_Prices():
 
 
 def repeatDownload(ticker):
-    repeat_times = 3  # repeat download for N times
+    repeat_times = 100  # repeat download for N times
     for _ in range(repeat_times):
         try:
-            time.sleep(random.uniform(2, 3))
+            time.sleep(random.uniform(10, 60))
             priceStr = PRICE(ticker)
+            print len(priceStr)
             if len(priceStr) > 0:  # skip loop if data is not empty
                 break
         except:
             if _ == 0: print ticker, "Http error!"
+            if _ == repeat_times - 1:
+                next(range(repeat_times), None)
+                continue
     return priceStr
 
 
 def PRICE(ticker):
-    start_y, start_m, start_d = '2004', '01', '01'  # starting date
-    end_y, end_m, end_d = '2999', '12', '01'  # until now
 
     # Construct url
     api_key = "umGymx6FEb-Bm2xRFRGV"
