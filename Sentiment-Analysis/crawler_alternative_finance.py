@@ -17,9 +17,13 @@ import quandl
 quandl.ApiConfig.api_key = 'umGymx6FEb-Bm2xRFRGV'
 
 
+def calc_finished_ticker():
+    os.system("awk -F',' '{print $1}' ./input/news_reuters.csv | sort | uniq > ./input/finished.reuters")
+
 def get_all():
     fin = open('./input/finished.reuters')
 
+    # S&P 500 should be from ^GSPC
     ref_data = quandl.get('TSE/1547', returns="numpy")  # S&P 500
     cor_data = quandl.get_table('WIKI/PRICES')  # 3000 US companies
 
@@ -34,18 +38,18 @@ def get_all():
 
     df = df_cor.append(df_ref)
 
-    df.to_csv('all_stocks.csv', sep=',', encoding='utf-8')
-
-    df.to_csv('^GSPC.csv', sep=',', encoding='utf-8').loc[df['ticker'] == '^GSPC']
+    sp500 = df.loc[df['ticker'] == '^GSPC']
+    sp500 = sp500.reindex(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+    sp500.to_csv('^GSPC.csv', sep=',', encoding='utf-8')
 
     for num, line in enumerate(fin):
         ticker = line.strip()
-        df.to_csv(ticker + '.csv', sep=',', encoding='utf-8').loc[df['ticker'] == ticker]
+        ticker_data = df.loc[df['ticker'] == ticker]
+        ticker_data = ticker_data.reindex(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+        ticker_data.to_csv(ticker + '.csv', sep=',', encoding='utf-8')
 
+    df.to_csv('all_stocks.csv', sep=',', encoding='utf-8')
 
-
-def calc_finished_ticker():
-    os.system("awk -F',' '{print $1}' ./input/news_reuters.csv | sort | uniq > ./input/finished.reuters")
 
 def get_stock_Prices():
     fin = open('./input/finished.reuters')
@@ -67,7 +71,7 @@ def get_stock_Prices():
         json.dump(priceSet, outfile, indent=4)
 
 def PRICE(ticker):
-    csv = open(ticker + '.csv').read().split('\n')
+    csv = open(ticker + '.csv').read().split(',')
 
     ticker_price = {}
     index = ['open', 'high', 'low', 'close', 'volume']
@@ -87,6 +91,6 @@ def PRICE(ticker):
 
 
 if __name__ == "__main__":
-    get_all()
     calc_finished_ticker()
+    get_all()
     get_stock_Prices()
