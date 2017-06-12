@@ -23,32 +23,37 @@ def calc_finished_ticker():
 def get_all():
     fin = open('./input/finished.reuters')
 
-    # S&P 500 should be from ^GSPC
-    ref_data = quandl.get('TSE/1547', returns="numpy")  # S&P 500
-    cor_data = quandl.get_table('WIKI/PRICES')  # 3000 US companies
+    if not os.path.isfile('./stocks/^GSPC.csv'):
+        # S&P 500 should be from ^GSPC
+        ref_data = quandl.get('TSE/1547', returns="numpy")  # S&P 500
+        cor_data = quandl.get_table('WIKI/PRICES')  # 3000 US companies
 
-    df_ref = pandas.DataFrame(data=ref_data)
-    df_ref['Ticker'] = '^GSPC'
+        df_ref = pandas.DataFrame(data=ref_data)
+        df_ref['Ticker'] = '^GSPC'
 
-    df_ref.columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'ticker']
-    df_ref = df_ref[['ticker', 'date', 'open', 'high', 'low', 'close', 'volume']]
+        df_ref.columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'ticker']
+        df_ref = df_ref[['ticker', 'date', 'open', 'high', 'low', 'close', 'volume']]
+        df_ref['adjclose'] = 0
 
-    df_cor = pandas.DataFrame(data=cor_data)
-    df_cor = df_cor.reindex(columns=['ticker', 'date', 'open', 'high', 'low', 'close', 'volume'])
+        df_cor = pandas.DataFrame(data=cor_data)
+        df_cor = df_cor.reindex(columns=['ticker', 'date', 'open', 'high', 'low', 'close', 'volume', 'adjclose'])
 
-    df = df_cor.append(df_ref)
+        df = df_cor.append(df_ref)
 
-    sp500 = df.loc[df['ticker'] == '^GSPC']
-    sp500 = sp500.reindex(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-    sp500.to_csv('^GSPC.csv', sep=',', encoding='utf-8')
+        sp500 = df.loc[df['ticker'] == '^GSPC']
+        sp500 = sp500.reindex(columns=['date', 'open', 'high', 'low', 'close', 'volume', 'adjclose'])
+        sp500.set_index('date', inplace=True)
+        sp500.to_csv('./stocks/^GSPC.csv', sep=',', encoding='utf-8', header=False)
 
-    for num, line in enumerate(fin):
-        ticker = line.strip()
-        ticker_data = df.loc[df['ticker'] == ticker]
-        ticker_data = ticker_data.reindex(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-        ticker_data.to_csv(ticker + '.csv', sep=',', encoding='utf-8')
+        for num, line in enumerate(fin):
+            ticker = line.strip()
+            ticker_data = df.loc[df['ticker'] == ticker]
+            ticker_data = ticker_data.reindex(columns=['date', 'open', 'high', 'low', 'close', 'volume', 'adjclose'])
+            ticker_data.set_index('date', inplace=True)
+            ticker_data.to_csv('./stocks/' + ticker + '.csv', sep=',', encoding='utf-8', header=False)
 
-    df.to_csv('all_stocks.csv', sep=',', encoding='utf-8')
+        df.set_index('date', inplace=True)
+        df.to_csv('./stocks/all_stocks.csv', sep=',', encoding='utf-8')
 
 
 def get_stock_Prices():
@@ -71,10 +76,9 @@ def get_stock_Prices():
         json.dump(priceSet, outfile, indent=4)
 
 def PRICE(ticker):
-    csv = open(ticker + '.csv').read().split(',')
-
+    csv = open('./stocks/' + ticker + '.csv').read().split('\n')
     ticker_price = {}
-    index = ['open', 'high', 'low', 'close', 'volume']
+    index = ['open', 'high', 'low', 'close', 'volume', 'adjclose']
     for num, line in enumerate(csv):
         line = line.strip().split(',')
         if len(line) < 7 or num == 0: continue

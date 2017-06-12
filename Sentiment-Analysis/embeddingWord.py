@@ -10,8 +10,17 @@ import numpy as np
 import theano
 import theano.tensor as T
 from nltk.corpus import reuters
+import nltk
+import ssl
 
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 
+#nltk.download()
 # reference https://github.com/lazyprogrammer/machine_learning_examples/blob/master/nlp_class2/glove.py
 
 class Glove:
